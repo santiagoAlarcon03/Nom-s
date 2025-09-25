@@ -6,7 +6,7 @@ class Carrito:
         """Inicializa el carrito con posición inicial"""
         self.x = x
         self.y = y
-        self.velocidad = 5
+        self.velocidad = 20
         self.ancho = 40
         self.alto = 60
         self.color = (255, 0, 0)  # Rojo
@@ -23,7 +23,14 @@ class Carrito:
         """Retorna el rectángulo de colisión del carrito"""
         return pygame.Rect(self.x, self.y, self.ancho, self.alto)
         
-    def dibujar(self, pantalla):
-        """Dibuja el carrito en la pantalla"""
-        rect = self.obtener_rect()
+    def dibujar(self, pantalla, ancho, alto):
+        """Dibuja el carrito en la pantalla, adaptado al tamaño"""
+        # Escalar posición y tamaño
+        escala_x = ancho / 600
+        escala_y = alto / 800
+        x = int(self.x * escala_x)
+        y = int(self.y * escala_y)
+        w = int(self.ancho * escala_x)
+        h = int(self.alto * escala_y)
+        rect = pygame.Rect(x, y, w, h)
         pygame.draw.rect(pantalla, self.color, rect)

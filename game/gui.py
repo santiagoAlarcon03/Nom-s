@@ -1,4 +1,3 @@
-# Interfaz gráfica (pygame)
 import pygame
 import sys
 
@@ -6,49 +5,52 @@ class GUI:
     def __init__(self):
         """Inicializa la interfaz gráfica"""
         self.ancho_pantalla = 600
-        self.alto_pantalla = 800
-        self.pantalla = pygame.display.set_mode((self.ancho_pantalla, self.alto_pantalla))
+        self.alto_pantalla = 700
+        self.pantalla = pygame.display.set_mode(
+            (self.ancho_pantalla, self.alto_pantalla), pygame.RESIZABLE
+        )
         pygame.display.set_caption("Juego de Carros - Árbol AVL")
         
-        # Fuentes
+
         pygame.font.init()
         self.fuente_grande = pygame.font.Font(None, 48)
         self.fuente_mediana = pygame.font.Font(None, 36)
         self.fuente_pequeña = pygame.font.Font(None, 24)
         
-        # Colores
+ 
         self.BLANCO = (255, 255, 255)
         self.NEGRO = (0, 0, 0)
         self.ROJO = (255, 0, 0)
         self.VERDE = (0, 255, 0)
         self.AZUL = (0, 0, 255)
+
+    def get_size(self):
+        """Devuelve el tamaño actual de la ventana"""
+        return self.pantalla.get_size()
         
     def renderizar(self, motor):
         """Renderiza todos los elementos del juego"""
-        # Limpiar pantalla
+        # Obtener tamaño actual de ventana
+        ancho, alto = self.get_size()
+        motor.ancho_pantalla = ancho
+        motor.alto_pantalla = alto
         self.pantalla.fill(self.NEGRO)
         
         if motor.juego_activo:
             # Dibujar carretera
-            motor.carretera.dibujar(self.pantalla)
-            
+            motor.carretera.dibujar(self.pantalla, ancho, alto)
             # Dibujar carrito
-            motor.carrito.dibujar(self.pantalla)
-            
+            motor.carrito.dibujar(self.pantalla, ancho, alto)
             # Dibujar obstáculos
             for obstaculo in motor.obstaculos:
-                obstaculo.dibujar(self.pantalla)
-                
+                obstaculo.dibujar(self.pantalla, ancho, alto)
             # Mostrar puntuación
             self.mostrar_puntuacion(motor.puntuacion)
-            
             # Mostrar velocidad
             self.mostrar_velocidad(motor.velocidad_juego)
-            
         else:
             # Pantalla de game over
             self.mostrar_game_over(motor.puntuacion)
-            
         # Actualizar pantalla
         pygame.display.flip()
         
@@ -66,13 +68,13 @@ class GUI:
         
     def mostrar_game_over(self, puntuacion_final):
         """Muestra la pantalla de game over"""
-        # Fondo semi-transparente
+
         overlay = pygame.Surface((self.ancho_pantalla, self.alto_pantalla))
         overlay.set_alpha(128)
         overlay.fill(self.NEGRO)
         self.pantalla.blit(overlay, (0, 0))
         
-        # Texto de Game Over
+  
         texto_game_over = self.fuente_grande.render("GAME OVER", True, self.ROJO)
         rect_game_over = texto_game_over.get_rect(center=(self.ancho_pantalla//2, 
                                                          self.alto_pantalla//2 - 50))
@@ -84,8 +86,8 @@ class GUI:
         rect_puntuacion = texto_puntuacion.get_rect(center=(self.ancho_pantalla//2, 
                                                            self.alto_pantalla//2))
         self.pantalla.blit(texto_puntuacion, rect_puntuacion)
-        
-        # Instrucciones para reiniciar
+
+  
         texto_reiniciar = self.fuente_pequeña.render("Presiona R para reiniciar o ESC para salir", 
                                                    True, self.VERDE)
         rect_reiniciar = texto_reiniciar.get_rect(center=(self.ancho_pantalla//2, 

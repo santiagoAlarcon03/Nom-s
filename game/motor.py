@@ -11,29 +11,25 @@ class Motor:
         """Inicializa el motor del juego"""
         self.ancho_pantalla = 600
         self.alto_pantalla = 800
-        
         # Componentes del juego
         self.carretera = Carretera(self.ancho_pantalla, self.alto_pantalla)
         self.carrito = Carrito(
-            self.carretera.obtener_carril_centro(1) - 20,  # Carril central
+            self.carretera.obtener_carril_centro(1) - 20,
             self.alto_pantalla - 100
         )
-        
         # Lista de obstáculos
         self.obstaculos = []
         self.tiempo_ultimo_obstaculo = 0
         self.intervalo_obstaculo = 2000  # milisegundos
-        
         # Árbol AVL para gestionar obstáculos
         self.arbol_obstaculos = ArbolAVL()
-        
         # Puntuación y estado del juego
         self.puntuacion = 0
         self.juego_activo = True
         self.velocidad_juego = 1.0
         
     def manejar_eventos(self, evento):
-        """Maneja los eventos del teclado"""
+        """Maneja los eventos del teclado y el redimensionamiento"""
         if evento.type == pygame.KEYDOWN:
             if evento.key == pygame.K_LEFT or evento.key == pygame.K_a:
                 if self.carrito.x > 0:
@@ -41,6 +37,9 @@ class Motor:
             elif evento.key == pygame.K_RIGHT or evento.key == pygame.K_d:
                 if self.carrito.x < self.ancho_pantalla - self.carrito.ancho:
                     self.carrito.mover_derecha()
+        elif evento.type == pygame.VIDEORESIZE:
+            self.ancho_pantalla = evento.w
+            self.alto_pantalla = evento.h
                     
     def generar_obstaculo(self):
         """Genera un nuevo obstáculo en un carril aleatorio"""

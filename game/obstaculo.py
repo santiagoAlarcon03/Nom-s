@@ -30,12 +30,17 @@ class Obstaculo:
         """Retorna el rectángulo de colisión del obstáculo"""
         return pygame.Rect(self.x, self.y, self.ancho, self.alto)
         
-    def dibujar(self, pantalla):
-        """Dibuja el obstáculo en la pantalla"""
+    def dibujar(self, pantalla, ancho, alto):
+        """Dibuja el obstáculo en la pantalla, adaptado al tamaño"""
         if self.activo:
-            rect = self.obtener_rect()
+            escala_x = ancho / 600
+            escala_y = alto / 800
+            x = int(self.x * escala_x)
+            y = int(self.y * escala_y)
+            w = int(self.ancho * escala_x)
+            h = int(self.alto * escala_y)
+            rect = pygame.Rect(x, y, w, h)
             pygame.draw.rect(pantalla, self.color, rect)
-            # Borde negro
             pygame.draw.rect(pantalla, (0, 0, 0), rect, 2)
             
     def esta_fuera_de_pantalla(self, alto_pantalla):
