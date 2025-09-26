@@ -3,13 +3,13 @@ import sys
 
 class GUI:
     def __init__(self):
-        """Inicializa la interfaz gráfica"""
-        self.ancho_pantalla = 600
-        self.alto_pantalla = 700
+        """Inicializa la interfaz gráfica para movimiento horizontal"""
+        self.ancho_pantalla = 800  # Más ancho para movimiento horizontal
+        self.alto_pantalla = 600   # Menos alto para movimiento horizontal
         self.pantalla = pygame.display.set_mode(
             (self.ancho_pantalla, self.alto_pantalla), pygame.RESIZABLE
         )
-        pygame.display.set_caption("Juego de Carros - Árbol AVL")
+        pygame.display.set_caption("Carrito Horizontal - Árbol AVL")
         
 
         pygame.font.init()
@@ -34,24 +34,34 @@ class GUI:
         ancho, alto = self.get_size()
         motor.ancho_pantalla = ancho
         motor.alto_pantalla = alto
-        self.pantalla.fill(self.NEGRO)
+        # Crear superficie rotada para cambiar orientación visual
+        superficie_juego = pygame.Surface((alto, ancho))  # Intercambiar dimensiones
         
         if motor.juego_activo:
-            # Dibujar carretera
-            motor.carretera.dibujar(self.pantalla, ancho, alto)
-            # Dibujar carrito
-            motor.carrito.dibujar(self.pantalla, ancho, alto)
-            # Dibujar obstáculos
+            # Dibujar en superficie temporal con coordenadas originales
+            motor.carretera.dibujar(superficie_juego, alto, ancho)
+            motor.carrito.dibujar(superficie_juego, alto, ancho)
             for obstaculo in motor.obstaculos:
-                obstaculo.dibujar(self.pantalla, ancho, alto)
-            # Mostrar puntuación
+                obstaculo.dibujar(superficie_juego, alto, ancho)
+        else:
+            superficie_juego.fill(self.NEGRO)
+            
+        # Rotar la superficie 90 grados en sentido horario y escalar
+        superficie_rotada = pygame.transform.rotate(superficie_juego, -90)
+        superficie_escalada = pygame.transform.scale(superficie_rotada, (ancho, alto))
+        
+        # Dibujar la superficie rotada en la pantalla principal
+        self.pantalla.fill(self.NEGRO)
+        self.pantalla.blit(superficie_escalada, (0, 0))
+        
+        if motor.juego_activo:
+            # Mostrar información en la pantalla rotada
             self.mostrar_puntuacion(motor.puntuacion)
-            # Mostrar velocidad
             self.mostrar_velocidad(motor.velocidad_juego)
         else:
             # Pantalla de game over
             self.mostrar_game_over(motor.puntuacion)
-        # Actualizar pantalla
+            
         pygame.display.flip()
         
     def mostrar_puntuacion(self, puntuacion):
@@ -110,7 +120,7 @@ class GUI:
         
         # Instrucciones
         instrucciones = [
-            "Usa las flechas o A/D para moverte",
+            "El carrito se mueve automáticamente hacia la derecha",
             "Evita los obstáculos azules",
             "Recoge los obstáculos amarillos",
             "Presiona ESPACIO para comenzar"

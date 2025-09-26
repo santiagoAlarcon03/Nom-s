@@ -9,13 +9,13 @@ from estructuras.arbol_avl import ArbolAVL
 class Motor:
     def __init__(self):
         """Inicializa el motor del juego"""
-        self.ancho_pantalla = 600
-        self.alto_pantalla = 800
+        self.ancho_pantalla = 800
+        self.alto_pantalla = 600
         # Componentes del juego
         self.carretera = Carretera(self.ancho_pantalla, self.alto_pantalla)
         self.carrito = Carrito(
-            self.carretera.obtener_carril_centro(1) - 20,
-            self.alto_pantalla - 100
+            self.ancho_pantalla // 2 - 25,  # Centro horizontal
+            self.alto_pantalla - 100  # Parte inferior
         )
         # Lista de obstáculos
         self.obstaculos = []
@@ -31,29 +31,32 @@ class Motor:
     def manejar_eventos(self, evento):
         """Maneja los eventos del teclado y el redimensionamiento"""
         if evento.type == pygame.KEYDOWN:
-            if evento.key == pygame.K_LEFT or evento.key == pygame.K_a:
-                if self.carrito.x > 0:
-                    self.carrito.mover_izquierda()
-            elif evento.key == pygame.K_RIGHT or evento.key == pygame.K_d:
-                if self.carrito.x < self.ancho_pantalla - self.carrito.ancho:
-                    self.carrito.mover_derecha()
+            if evento.key == pygame.K_UP or evento.key == pygame.K_w:
+                # Verificar límite izquierdo (aparece como arriba en la pantalla rotada)
+                if self.carrito.x - self.carrito.velocidad >= 0:
+                    self.carrito.mover_arriba()
+            elif evento.key == pygame.K_DOWN or evento.key == pygame.K_s:
+                # Verificar límite derecho (aparece como abajo en la pantalla rotada)
+                if self.carrito.x + self.carrito.ancho + self.carrito.velocidad <= self.ancho_pantalla:
+                    self.carrito.mover_abajo()
         elif evento.type == pygame.VIDEORESIZE:
             self.ancho_pantalla = evento.w
             self.alto_pantalla = evento.h
                     
     def generar_obstaculo(self):
-        """Genera un nuevo obstáculo en un carril aleatorio"""
-        carril = random.randint(0, self.carretera.carriles - 1)
-        x = self.carretera.obtener_carril_centro(carril) - 17  # Centrar obstáculo
+        """Genera un nuevo obstáculo en la parte superior"""
+        x = random.randint(0, self.ancho_pantalla - 30)
+        y = -30  # Aparece arriba de la pantalla
         
         # Tipo de obstáculo aleatorio
         tipo = random.choice(["normal", "normal", "normal", "especial"])
         
-        obstaculo = Obstaculo(x, -50, tipo)
+        obstaculo = Obstaculo(x, y, tipo)
         self.obstaculos.append(obstaculo)
         
-        # Agregar al árbol AVL (usando posición Y como clave)
-        self.arbol_obstaculos.insertar(obstaculo.y, obstaculo)
+        # Agregar al árbol AVL (usando posición Y como clave principal)
+        clave = f"{obstaculo.y},{obstaculo.x}"  # Usar coordenadas como clave única
+        self.arbol_obstaculos.insertar(clave, obstaculo)
         
     def actualizar(self):
         """Actualiza la lógica del juego"""
@@ -72,7 +75,8 @@ class Motor:
         # Actualizar obstáculos
         obstaculos_a_eliminar = []
         for obstaculo in self.obstaculos:
-            obstaculo.actualizar()
+            # Mover obstáculo hacia abajo
+            obstaculo.mover(self.velocidad_juego)
             
             # Verificar colisiones
             if self.verificar_colision(self.carrito, obstaculo):
@@ -82,8 +86,8 @@ class Motor:
                     self.puntuacion += 10
                     obstaculo.desactivar()
                     
-            # Eliminar obstáculos fuera de pantalla
-            if obstaculo.esta_fuera_de_pantalla(self.alto_pantalla):
+            # Eliminar obstáculos que salieron de la pantalla
+            if obstaculo.y > self.alto_pantalla:
                 obstaculos_a_eliminar.append(obstaculo)
                 self.puntuacion += 1
                 
@@ -103,7 +107,21 @@ class Motor:
         rect_carrito = carrito.obtener_rect()
         rect_obstaculo = obstaculo.obtener_rect()
         
-        return rect_carrito.colliderect(rect_obstaculo)
+        # Colisión más estricta: reducir ligeramente las áreas de colisión para mayor precisión
+        rect_carrito_reducido = pygame.Rect(
+            rect_carrito.x + 2, 
+            rect_carrito.y + 2, 
+            rect_carrito.width - 4, 
+            rect_carrito.height - 4
+        )
+        rect_obstaculo_reducido = pygame.Rect(
+            rect_obstaculo.x + 2, 
+            rect_obstaculo.y + 2, 
+            rect_obstaculo.width - 4, 
+            rect_obstaculo.height - 4
+        )
+        
+        return rect_carrito_reducido.colliderect(rect_obstaculo_reducido)
         
     def reiniciar_juego(self):
         """Reinicia el juego"""
@@ -112,5 +130,5 @@ class Motor:
         self.puntuacion = 0
         self.juego_activo = True
         self.velocidad_juego = 1.0
-        self.carrito.x = self.carretera.obtener_carril_centro(1) - 20
-        self.carrito.y = self.alto_pantalla - 100
+        self.carrito.x = self.ancho_pantalla // 2 - 25  # Centro horizontal
+        self.carrito.y = self.alto_pantalla - 100  # Parte inferior

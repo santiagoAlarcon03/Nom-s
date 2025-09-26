@@ -7,16 +7,16 @@ class Carrito:
         self.x = x
         self.y = y
         self.velocidad = 20
-        self.ancho = 40
-        self.alto = 60
-        self.color = (255, 0, 0)  # Rojo
+        self.ancho = 50  # Ligeramente más pequeño para colisión más precisa
+        self.alto = 70   # Ligeramente más pequeño para colisión más precisa
+        self.color = (0, 0, 255)  # Azul para distinguir mejor
         
-    def mover_izquierda(self):
-        """Mueve el carrito hacia la izquierda"""
+    def mover_arriba(self):
+        """Mueve el carrito hacia arriba (izquierda en coordenadas originales)"""
         self.x -= self.velocidad
         
-    def mover_derecha(self):
-        """Mueve el carrito hacia la derecha"""
+    def mover_abajo(self):
+        """Mueve el carrito hacia abajo (derecha en coordenadas originales)"""
         self.x += self.velocidad
         
     def obtener_rect(self):
@@ -25,12 +25,14 @@ class Carrito:
         
     def dibujar(self, pantalla, ancho, alto):
         """Dibuja el carrito en la pantalla, adaptado al tamaño"""
-        # Escalar posición y tamaño
-        escala_x = ancho / 600
-        escala_y = alto / 800
+        escala_x = ancho / 800
+        escala_y = alto / 600
         x = int(self.x * escala_x)
         y = int(self.y * escala_y)
         w = int(self.ancho * escala_x)
         h = int(self.alto * escala_y)
         rect = pygame.Rect(x, y, w, h)
         pygame.draw.rect(pantalla, self.color, rect)
+        
+        # Agregar borde negro para mejor visibilidad
+        pygame.draw.rect(pantalla, (0, 0, 0), rect, 2)
