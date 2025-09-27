@@ -1,4 +1,3 @@
-# Implementación AVL
 from .nodo_avl import NodoAVL
 
 class ArbolAVL:

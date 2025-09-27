@@ -45,11 +45,12 @@ class Motor:
                     
     def generar_obstaculo(self):
         """Genera un nuevo obstáculo en la parte superior"""
-        x = random.randint(0, self.ancho_pantalla - 30)
-        y = -30  # Aparece arriba de la pantalla
+        x = random.randint(0, self.ancho_pantalla - 40)
+        y = -40  # Aparece arriba de la pantalla
         
-        # Tipo de obstáculo aleatorio
-        tipo = random.choice(["normal", "normal", "normal", "especial"])
+        # Tipo de obstáculo aleatorio con diferentes probabilidades
+        probabilidades = ["roca", "roca", "cono", "cono", "cono", "hueco", "aceite", "aceite", "aceite"]
+        tipo = random.choice(probabilidades)
         
         obstaculo = Obstaculo(x, y, tipo)
         self.obstaculos.append(obstaculo)
@@ -80,11 +81,19 @@ class Motor:
             
             # Verificar colisiones
             if self.verificar_colision(self.carrito, obstaculo):
-                if obstaculo.tipo == "normal":
+                # Reducir energía del carrito según el tipo de obstáculo
+                danio = obstaculo.obtener_danio_energia()
+                sin_energia = self.carrito.reducir_energia(danio)
+                
+                # Agregar puntos por el obstáculo superado (aunque haya causado daño)
+                self.puntuacion += 5
+                
+                # Desactivar obstáculo después de la colisión
+                obstaculo.desactivar()
+                
+                # Terminar juego si se queda sin energía
+                if sin_energia:
                     self.juego_activo = False
-                elif obstaculo.tipo == "especial":
-                    self.puntuacion += 10
-                    obstaculo.desactivar()
                     
             # Eliminar obstáculos que salieron de la pantalla
             if obstaculo.y > self.alto_pantalla:
@@ -132,3 +141,5 @@ class Motor:
         self.velocidad_juego = 1.0
         self.carrito.x = self.ancho_pantalla // 2 - 25  # Centro horizontal
         self.carrito.y = self.alto_pantalla - 100  # Parte inferior
+        # Restaurar energía del carrito
+        self.carrito.energia_actual = self.carrito.energia_maxima

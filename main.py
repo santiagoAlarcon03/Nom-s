@@ -19,6 +19,11 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r and not motor.juego_activo:
+                    motor.reiniciar_juego()
+                elif event.key == pygame.K_ESCAPE:
+                    running = False
             
             # Manejar eventos del juego
             motor.manejar_eventos(event)

@@ -58,6 +58,7 @@ class GUI:
             # Mostrar información en la pantalla rotada
             self.mostrar_puntuacion(motor.puntuacion)
             self.mostrar_velocidad(motor.velocidad_juego)
+            self.mostrar_energia(motor.carrito)
         else:
             # Pantalla de game over
             self.mostrar_game_over(motor.puntuacion)
@@ -75,6 +76,46 @@ class GUI:
         texto = self.fuente_pequeña.render(f"Velocidad: {velocidad:.1f}x", 
                                          True, self.BLANCO)
         self.pantalla.blit(texto, (10, 50))
+        
+    def mostrar_energia(self, carrito):
+        """Muestra la barra de energía del carrito"""
+        # Posición y dimensiones de la barra
+        barra_x = 10
+        barra_y = 80
+        barra_ancho = 200
+        barra_alto = 20
+        
+        # Calcular porcentaje de energía
+        porcentaje = carrito.obtener_porcentaje_energia()
+        ancho_energia = int((porcentaje / 100) * barra_ancho)
+        
+        # Color de la barra según el nivel de energía
+        if porcentaje > 70:
+            color_energia = (0, 255, 0)  # Verde
+        elif porcentaje > 40:
+            color_energia = (255, 255, 0)  # Amarillo
+        elif porcentaje > 20:
+            color_energia = (255, 165, 0)  # Naranja
+        else:
+            color_energia = (255, 0, 0)  # Rojo
+            
+        # Dibujar fondo de la barra
+        pygame.draw.rect(self.pantalla, (64, 64, 64), 
+                        (barra_x, barra_y, barra_ancho, barra_alto))
+        
+        # Dibujar energía actual
+        if ancho_energia > 0:
+            pygame.draw.rect(self.pantalla, color_energia, 
+                            (barra_x, barra_y, ancho_energia, barra_alto))
+        
+        # Dibujar borde
+        pygame.draw.rect(self.pantalla, self.BLANCO, 
+                        (barra_x, barra_y, barra_ancho, barra_alto), 2)
+        
+        # Texto de energía
+        texto_energia = self.fuente_pequeña.render(f"Energía: {carrito.energia_actual}/{carrito.energia_maxima}", 
+                                                  True, self.BLANCO)
+        self.pantalla.blit(texto_energia, (barra_x + barra_ancho + 10, barra_y))
         
     def mostrar_game_over(self, puntuacion_final):
         """Muestra la pantalla de game over"""
