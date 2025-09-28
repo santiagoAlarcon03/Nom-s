@@ -1,4 +1,3 @@
-# Clase Obstáculo - Sistema de tipos con drenaje de energía
 import pygame
 
 class Obstaculo:
@@ -10,28 +9,27 @@ class Obstaculo:
         self.alto = 40
         self.tipo = tipo
         self.activo = True
-        
-        # Definir propiedades según el tipo de obstáculo
+
         self.propiedades_tipos = {
             "roca": {
-                "color": (139, 69, 19),    # Marrón
-                "danio_energia": 25,       # Daño alto
+                "color": (139, 69, 19),  
+                "danio_energia": 25,       
                 "descripcion": "Roca grande"
             },
             "cono": {
-                "color": (255, 165, 0),    # Naranja
-                "danio_energia": 15,       # Daño medio
+                "color": (255, 165, 0),    
+                "danio_energia": 15,       
                 "descripcion": "Cono de tráfico"
             },
             "hueco": {
-                "color": (64, 64, 64),     # Gris oscuro
-                "danio_energia": 30,       # Daño muy alto
+                "color": (64, 64, 64),   
+                "danio_energia": 30,       
                 "descripcion": "Hueco en la carretera"
             },
             "aceite": {
-                "color": (75, 0, 130),     # Púrpura oscuro
-                "danio_energia": 10,       # Daño bajo
-                "descripcion": "Mancha de aceite"
+                "color": (75, 0, 130),    
+                "danio_energia": 10,       
+            "descripcion": "Mancha de aceite"
             }
         }
         
@@ -71,7 +69,6 @@ class Obstaculo:
             
             rect = pygame.Rect(x, y, w, h)
             
-            # Dibujar según el tipo de obstáculo
             if self.tipo == "roca":
                 # Dibujar como círculo irregular (roca)
                 pygame.draw.ellipse(pantalla, self.color, rect)
@@ -81,35 +78,29 @@ class Obstaculo:
                 pygame.draw.circle(pantalla, (100, 50, 0), (center_x-5, center_y-3), 3)
                 pygame.draw.circle(pantalla, (100, 50, 0), (center_x+3, center_y+4), 2)
                 
-            elif self.tipo == "cono":
-                # Dibujar como triángulo (cono)
+            elif self.tipo == "cono":     
                 pygame.draw.rect(pantalla, self.color, rect)
                 pygame.draw.polygon(pantalla, (255, 255, 255), [
-                    (x + w//2, y + 5),  # Punta superior
-                    (x + 5, y + h - 5), # Esquina inferior izquierda
-                    (x + w - 5, y + h - 5)  # Esquina inferior derecha
+                    (x + w//2, y + 5), 
+                    (x + 5, y + h - 5),
+                    (x + w - 5, y + h - 5) 
                 ])
                 pygame.draw.rect(pantalla, (0, 0, 0), rect, 2)
                 
             elif self.tipo == "hueco":
-                # Dibujar como círculo negro (hueco)
                 pygame.draw.ellipse(pantalla, self.color, rect)
                 pygame.draw.ellipse(pantalla, (0, 0, 0), rect, 3)
-                # Efecto de profundidad
                 inner_rect = pygame.Rect(x+5, y+5, w-10, h-10)
                 pygame.draw.ellipse(pantalla, (32, 32, 32), inner_rect)
                 
             elif self.tipo == "aceite":
-                # Dibujar como mancha irregular (aceite)
                 pygame.draw.ellipse(pantalla, self.color, rect)
-                # Efectos de brillo
                 center_x, center_y = rect.center
                 pygame.draw.circle(pantalla, (138, 43, 226), (center_x-3, center_y-2), w//6)
                 pygame.draw.circle(pantalla, (255, 255, 255), (center_x+2, center_y+1), w//8)
                 pygame.draw.ellipse(pantalla, (0, 0, 0), rect, 1)
                 
             else:
-                # Dibujar como cuadrado genérico
                 pygame.draw.rect(pantalla, self.color, rect)
                 pygame.draw.rect(pantalla, (0, 0, 0), rect, 2)
         

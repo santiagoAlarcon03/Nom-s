@@ -39,6 +39,9 @@ class Motor:
                 # Verificar límite derecho (aparece como abajo en la pantalla rotada)
                 if self.carrito.x + self.carrito.ancho + self.carrito.velocidad <= self.ancho_pantalla:
                     self.carrito.mover_abajo()
+            elif evento.key == pygame.K_SPACE:
+                # Saltar con la barra espaciadora
+                self.carrito.saltar()
         elif evento.type == pygame.VIDEORESIZE:
             self.ancho_pantalla = evento.w
             self.alto_pantalla = evento.h
@@ -64,6 +67,9 @@ class Motor:
         if not self.juego_activo:
             return
             
+        # Actualizar sistema de salto del carrito
+        self.carrito.actualizar_salto()
+            
         # Actualizar carretera
         self.carretera.actualizar()
         
@@ -81,19 +87,24 @@ class Motor:
             
             # Verificar colisiones
             if self.verificar_colision(self.carrito, obstaculo):
-                # Reducir energía del carrito según el tipo de obstáculo
-                danio = obstaculo.obtener_danio_energia()
-                sin_energia = self.carrito.reducir_energia(danio)
-                
-                # Agregar puntos por el obstáculo superado (aunque haya causado daño)
-                self.puntuacion += 5
+                # Si está saltando, no pierde energía y obtiene puntos bonus
+                if self.carrito.esta_saltando():
+                    # Puntos bonus por saltar sobre el obstáculo
+                    self.puntuacion += 15
+                else:
+                    # Reducir energía del carrito según el tipo de obstáculo
+                    danio = obstaculo.obtener_danio_energia()
+                    sin_energia = self.carrito.reducir_energia(danio)
+                    
+                    # Agregar puntos por el obstáculo superado (aunque haya causado daño)
+                    self.puntuacion += 5
+                    
+                    # Terminar juego si se queda sin energía
+                    if sin_energia:
+                        self.juego_activo = False
                 
                 # Desactivar obstáculo después de la colisión
                 obstaculo.desactivar()
-                
-                # Terminar juego si se queda sin energía
-                if sin_energia:
-                    self.juego_activo = False
                     
             # Eliminar obstáculos que salieron de la pantalla
             if obstaculo.y > self.alto_pantalla:
@@ -139,7 +150,9 @@ class Motor:
         self.puntuacion = 0
         self.juego_activo = True
         self.velocidad_juego = 1.0
-        self.carrito.x = self.ancho_pantalla // 2 - 25  # Centro horizontal
-        self.carrito.y = self.alto_pantalla - 100  # Parte inferior
-        # Restaurar energía del carrito
+        self.carrito.x = self.ancho_pantalla // 2 - 25
+        self.carrito.y = self.alto_pantalla - 100  
         self.carrito.energia_actual = self.carrito.energia_maxima
+        # Resetear estado de salto
+        self.carrito.saltando = False
+        self.carrito.tiempo_salto = 0
