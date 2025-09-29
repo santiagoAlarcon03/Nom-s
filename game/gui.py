@@ -4,7 +4,7 @@ import sys
 class GUI:
     def __init__(self):
         """Inicializa la interfaz gráfica para movimiento horizontal"""
-        self.ancho_pantalla = 800  
+        self.ancho_pantalla = 900  
         self.alto_pantalla = 600  
         self.pantalla = pygame.display.set_mode(
             (self.ancho_pantalla, self.alto_pantalla), pygame.RESIZABLE
@@ -36,7 +36,7 @@ class GUI:
         
         if motor.juego_activo:
             # Dibujar en superficie temporal con coordenadas originales
-            motor.carretera.dibujar(superficie_juego, alto, ancho)
+            motor.carretera.dibujar_estatica(superficie_juego, alto, ancho)  # Usar método estático
             motor.carrito.dibujar(superficie_juego, alto, ancho)
             for obstaculo in motor.obstaculos:
                 obstaculo.dibujar(superficie_juego, alto, ancho)
@@ -55,7 +55,10 @@ class GUI:
             # Mostrar información en la pantalla rotada
             self.mostrar_puntuacion(motor.puntuacion)
             self.mostrar_velocidad(motor.velocidad_juego)
+            self.mostrar_velocidad_carrito(motor.velocidad_carrito_x)
+            self.mostrar_carril_actual(motor.carril_actual, motor.total_carriles)
             self.mostrar_energia(motor.carrito)
+            self.mostrar_indicadores_carriles(motor)
         else:
             # Pantalla de game over
             self.mostrar_game_over(motor.puntuacion)
@@ -69,15 +72,30 @@ class GUI:
         self.pantalla.blit(texto, (10, 10))
         
     def mostrar_velocidad(self, velocidad):
-        """Muestra la velocidad actual"""
-        texto = self.fuente_pequeña.render(f"Velocidad: {velocidad:.1f}x", 
+        """Muestra la velocidad actual del juego"""
+        texto = self.fuente_pequeña.render(f"Velocidad Juego: {velocidad:.1f}x", 
                                          True, self.BLANCO)
         self.pantalla.blit(texto, (10, 50))
+        
+    def mostrar_velocidad_carrito(self, velocidad_carrito):
+        """Muestra la velocidad del carrito"""
+        texto = self.fuente_pequeña.render(f"Velocidad Carrito: {velocidad_carrito:.1f}px/s", 
+                                         True, self.BLANCO)
+        self.pantalla.blit(texto, (10, 70))
+        
+    def mostrar_carril_actual(self, carril_actual, total_carriles):
+        """Muestra el carril actual del carrito"""
+        nombres_carriles = ["Izquierdo", "Central", "Derecho"]
+        nombre_carril = nombres_carriles[carril_actual] if carril_actual < len(nombres_carriles) else f"Carril {carril_actual + 1}"
+        
+        texto = self.fuente_pequeña.render(f"Carril: {nombre_carril} ({carril_actual + 1}/{total_carriles})", 
+                                         True, self.BLANCO)
+        self.pantalla.blit(texto, (10, 90))
         
     def mostrar_energia(self, carrito):
         """Muestra la barra de energía del carrito"""
         barra_x = 10
-        barra_y = 80
+        barra_y = 120  # Ajustar posición Y para dar espacio a la información de carril
         barra_ancho = 200
         barra_alto = 20
         
@@ -107,6 +125,38 @@ class GUI:
         texto_energia = self.fuente_pequeña.render(f"Energía: {carrito.energia_actual}/{carrito.energia_maxima}", 
                                                   True, self.BLANCO)
         self.pantalla.blit(texto_energia, (barra_x + barra_ancho + 10, barra_y))
+        
+    def mostrar_indicadores_carriles(self, motor):
+        """Muestra indicadores visuales de los carriles"""
+        ancho, alto = self.get_size()
+        
+        # Posición de los indicadores en la parte derecha de la pantalla
+        pos_x = ancho - 80
+        pos_y_base = alto // 2 - 50
+        
+        # Colores
+        AMARILLO = (255, 255, 0)
+        GRIS = (100, 100, 100)
+        
+        # Dibujar indicador para cada carril
+        for i in range(motor.total_carriles):
+            pos_y = pos_y_base + (i * 40)
+            color = AMARILLO if i == motor.carril_actual else GRIS
+            
+            # Círculo indicador
+            pygame.draw.circle(self.pantalla, color, (pos_x, pos_y), 12)
+            pygame.draw.circle(self.pantalla, self.BLANCO, (pos_x, pos_y), 12, 2)
+            
+            # Etiqueta del carril
+            nombres = ["I", "C", "D"]  # Izquierdo, Central, Derecho
+            texto = self.fuente_pequeña.render(nombres[i] if i < len(nombres) else str(i+1), 
+                                             True, self.NEGRO if i == motor.carril_actual else self.BLANCO)
+            rect_texto = texto.get_rect(center=(pos_x, pos_y))
+            self.pantalla.blit(texto, rect_texto)
+        
+        # Instrucciones de control
+        texto_controles = self.fuente_pequeña.render("↑/↓ o W/S: Cambiar carril", True, GRIS)
+        self.pantalla.blit(texto_controles, (pos_x - 100, pos_y_base + 120))
         
     def mostrar_game_over(self, puntuacion_final):
         """Muestra la pantalla de game over"""

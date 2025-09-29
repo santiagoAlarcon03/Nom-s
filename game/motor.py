@@ -1,6 +1,8 @@
 # Lógica de movimiento y colisiones
 import pygame
 import random
+import json
+import os
 from .carrito import Carrito
 from .carretera import Carretera
 from .obstaculo import Obstaculo
@@ -14,13 +16,12 @@ class Motor:
         # Componentes del juego
         self.carretera = Carretera(self.ancho_pantalla, self.alto_pantalla)
         self.carrito = Carrito(
-            self.ancho_pantalla // 2 - 25,  # Centro horizontal
-            self.alto_pantalla - 100  # Parte inferior
+            self.ancho_pantalla // 2 - 25,  # Centro horizontal (controla carril)
+            self.alto_pantalla - 50  # Parte inferior (se moverá automáticamente hacia arriba)
         )
         # Lista de obstáculos
         self.obstaculos = []
-        self.tiempo_ultimo_obstaculo = 0
-        self.intervalo_obstaculo = 2000  # milisegundos
+        self.obstaculos_predefinidos = []  # Obstáculos cargados desde JSON
         # Árbol AVL para gestionar obstáculos
         self.arbol_obstaculos = ArbolAVL()
         # Puntuación y estado del juego
@@ -28,38 +29,74 @@ class Motor:
         self.juego_activo = True
         self.velocidad_juego = 1.0
         
+        # Sistema de movimiento automático del carrito
+        self.velocidad_carrito_x = 2.0  # Velocidad de movimiento horizontal automático
+        
+        # Sistema de carriles
+        self.carril_actual = 1  # Carril central (0=izquierdo, 1=central, 2=derecho)
+        self.total_carriles = 3
+        self.posiciones_carriles = []  # Se calculará dinámicamente según el ancho de pantalla
+        self.cargar_obstaculos_json()
+        
     def manejar_eventos(self, evento):
         """Maneja los eventos del teclado y el redimensionamiento"""
         if evento.type == pygame.KEYDOWN:
             if evento.key == pygame.K_UP or evento.key == pygame.K_w:
-                # Verificar límite izquierdo (aparece como arriba en la pantalla rotada)
-                if self.carrito.x - self.carrito.velocidad >= 0:
-                    self.carrito.mover_arriba()
+                # Cambiar al carril izquierdo
+                if self.carril_actual > 0:
+                    self.carril_actual -= 1
+                    self.actualizar_posicion_carril()
             elif evento.key == pygame.K_DOWN or evento.key == pygame.K_s:
-                # Verificar límite derecho (aparece como abajo en la pantalla rotada)
-                if self.carrito.x + self.carrito.ancho + self.carrito.velocidad <= self.ancho_pantalla:
-                    self.carrito.mover_abajo()
+                # Cambiar al carril derecho
+                if self.carril_actual < self.total_carriles - 1:
+                    self.carril_actual += 1
+                    self.actualizar_posicion_carril()
             elif evento.key == pygame.K_SPACE:
                 # Saltar con la barra espaciadora
                 self.carrito.saltar()
         elif evento.type == pygame.VIDEORESIZE:
             self.ancho_pantalla = evento.w
             self.alto_pantalla = evento.h
+            self.calcular_posiciones_carriles()  # Recalcular carriles al redimensionar
                     
-    def generar_obstaculo(self):
-        """Genera un nuevo obstáculo en la parte superior"""
-        x = random.randint(0, self.ancho_pantalla - 40)
-        y = -40  # Aparece arriba de la pantalla
+    def cargar_obstaculos_json(self):
+        """Carga obstáculos predefinidos exactamente desde el archivo JSON"""
+        try:
+            ruta_json = os.path.join(os.path.dirname(__file__), "..", "obstaculos.json")
+            with open(ruta_json, 'r', encoding='utf-8') as archivo:
+                datos_obstaculos = json.load(archivo)
+                
+            self.obstaculos_predefinidos = []
+            self.arbol_obstaculos = ArbolAVL()
+            
+            for obs_data in datos_obstaculos:
+                # Usar coordenadas exactas del JSON sin modificaciones
+                self.crear_obstaculo_en_posicion(obs_data["x"], obs_data["y"], obs_data["tipo"])
+                
+        except FileNotFoundError:
+            print("Archivo obstaculos.json no encontrado. No se cargarán obstáculos.")
+        except json.JSONDecodeError:
+            print("Error al leer obstaculos.json. Formato JSON inválido.")
+        except Exception as e:
+            print(f"Error al cargar obstáculos: {e}")
         
-        # Tipo de obstáculo aleatorio con diferentes probabilidades
-        probabilidades = ["roca", "roca", "cono", "cono", "cono", "hueco", "aceite", "aceite", "aceite"]
-        tipo = random.choice(probabilidades)
+
+                
+    def crear_obstaculo_en_posicion(self, distancia, carril, tipo):
+        """Crea un obstáculo en la posición especificada"""
+        # Calcular posición X basada en el carril
+        ancho_carril = self.ancho_pantalla // self.total_carriles
+        pos_x = (carril * ancho_carril) + (ancho_carril // 2) - 20  # Centrar en carril
         
-        obstaculo = Obstaculo(x, y, tipo)
-        self.obstaculos.append(obstaculo)
+        # La posición Y: convertir distancia a coordenadas de pantalla
+        pos_y = (self.alto_pantalla - 50) - distancia
         
-        # Agregar al árbol AVL (usando posición Y como clave principal)
-        clave = f"{obstaculo.y},{obstaculo.x}"  # Usar coordenadas como clave única
+        # Crear obstáculo
+        obstaculo = Obstaculo(pos_x, pos_y, tipo)
+        self.obstaculos_predefinidos.append(obstaculo)
+        
+        # Agregar al árbol AVL
+        clave = f"{obstaculo.y},{obstaculo.x}"
         self.arbol_obstaculos.insertar(clave, obstaculo)
         
     def actualizar(self):
@@ -67,25 +104,28 @@ class Motor:
         if not self.juego_activo:
             return
             
+        # Calcular posiciones de carriles si es necesario
+        if not self.posiciones_carriles:
+            self.calcular_posiciones_carriles()
+            self.actualizar_posicion_carril()
+        
         # Actualizar sistema de salto del carrito
         self.carrito.actualizar_salto()
-            
-        # Actualizar carretera
-        self.carretera.actualizar()
         
-        # Generar obstáculos
-        tiempo_actual = pygame.time.get_ticks()
-        if tiempo_actual - self.tiempo_ultimo_obstaculo > self.intervalo_obstaculo:
-            self.generar_obstaculo()
-            self.tiempo_ultimo_obstaculo = tiempo_actual
+        # Mover carrito automáticamente en el eje Y (que aparece horizontal en pantalla rotada)
+        self.carrito.y -= self.velocidad_carrito_x
+        
+        # Si el carrito sale por arriba, vuelve a aparecer por abajo
+        if self.carrito.y < -self.carrito.alto:
+            self.carrito.y = self.alto_pantalla
             
-        # Actualizar obstáculos
-        obstaculos_a_eliminar = []
+        # La carretera ahora es estática (no se actualiza)
+        
+        # Actualizar lista de obstáculos visibles (los que están cerca del carrito)
+        self.actualizar_obstaculos_visibles()
+        
+        # Verificar colisiones con obstáculos predefinidos
         for obstaculo in self.obstaculos:
-            # Mover obstáculo hacia abajo
-            obstaculo.mover(self.velocidad_juego)
-            
-            # Verificar colisiones
             if self.verificar_colision(self.carrito, obstaculo):
                 # Si está saltando, no pierde energía y obtiene puntos bonus
                 if self.carrito.esta_saltando():
@@ -105,19 +145,13 @@ class Motor:
                 
                 # Desactivar obstáculo después de la colisión
                 obstaculo.desactivar()
-                    
-            # Eliminar obstáculos que salieron de la pantalla
-            if obstaculo.y > self.alto_pantalla:
-                obstaculos_a_eliminar.append(obstaculo)
-                self.puntuacion += 1
-                
-        # Limpiar obstáculos eliminados
-        for obstaculo in obstaculos_a_eliminar:
-            if obstaculo in self.obstaculos:
-                self.obstaculos.remove(obstaculo)
+        
+        # Aumentar puntuación por distancia recorrida
+        self.puntuacion += 0.1
                 
         # Aumentar velocidad gradualmente
         self.velocidad_juego += 0.001
+        self.velocidad_carrito_x += 0.001  # También aumentar velocidad del carrito
         
     def verificar_colision(self, carrito, obstaculo):
         """Verifica si hay colisión entre el carrito y un obstáculo"""
@@ -142,6 +176,48 @@ class Motor:
         )
         
         return rect_carrito_reducido.colliderect(rect_obstaculo_reducido)
+    
+    def calcular_posiciones_carriles(self):
+        """Calcula las posiciones X de cada carril"""
+        ancho_carril = self.ancho_pantalla // self.total_carriles
+        self.posiciones_carriles = []
+        for i in range(self.total_carriles):
+            # Centrar el carrito en cada carril
+            posicion_x = (i * ancho_carril) + (ancho_carril // 2) - (self.carrito.ancho // 2)
+            self.posiciones_carriles.append(posicion_x)
+            
+        # Recalcular posiciones de obstáculos predefinidos cuando cambie el tamaño de ventana
+        self.recalcular_posiciones_obstaculos()
+        
+    def recalcular_posiciones_obstaculos(self):
+        """Recalcula las posiciones X de los obstáculos según el nuevo ancho de pantalla"""
+        if hasattr(self, 'obstaculos_predefinidos'):
+            ancho_carril = self.ancho_pantalla // self.total_carriles
+            for obstaculo in self.obstaculos_predefinidos:
+                # Determinar en qué carril estaba originalmente
+                carril_actual = min(2, max(0, int(obstaculo.x // ancho_carril)))
+                # Reposicionar en el mismo carril con nuevo ancho
+                obstaculo.x = (carril_actual * ancho_carril) + (ancho_carril // 2) - 20
+    
+    def actualizar_posicion_carril(self):
+        """Actualiza la posición X del carrito según el carril actual"""
+        if self.posiciones_carriles:
+            self.carrito.x = self.posiciones_carriles[self.carril_actual]
+            
+    def actualizar_obstaculos_visibles(self):
+        """Actualiza la lista de obstáculos visibles según la posición del carrito"""
+        # Limpiar lista de obstáculos visibles
+        self.obstaculos = []
+        
+        # Rango de visibilidad: obstáculos que están cerca del carrito
+        margen = 200
+        limite_superior = self.carrito.y + margen  # Detrás del carrito
+        limite_inferior = self.carrito.y - self.alto_pantalla - margen  # Adelante del carrito
+        
+        # Agregar obstáculos predefinidos que están en el rango visible
+        for obstaculo in self.obstaculos_predefinidos:
+            if obstaculo.activo and limite_inferior <= obstaculo.y <= limite_superior:
+                self.obstaculos.append(obstaculo)
         
     def reiniciar_juego(self):
         """Reinicia el juego"""
@@ -150,9 +226,15 @@ class Motor:
         self.puntuacion = 0
         self.juego_activo = True
         self.velocidad_juego = 1.0
+        self.velocidad_carrito_x = 2.0  # Resetear velocidad del carrito
         self.carrito.x = self.ancho_pantalla // 2 - 25
-        self.carrito.y = self.alto_pantalla - 100  
+        self.carrito.y = self.alto_pantalla - 50  # Posición inicial en la parte inferior  
         self.carrito.energia_actual = self.carrito.energia_maxima
         # Resetear estado de salto
         self.carrito.saltando = False
         self.carrito.tiempo_salto = 0
+        
+        # Recargar obstáculos desde JSON y reactivar todos
+        self.cargar_obstaculos_json()
+        for obstaculo in self.obstaculos_predefinidos:
+            obstaculo.activo = True

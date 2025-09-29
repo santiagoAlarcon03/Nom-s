@@ -1,0 +1,10 @@
+[
+  {"x": 100, "y": 0, "tipo": "roca"},
+  {"x": 200, "y": 1, "tipo": "cono"},
+  {"x": 300, "y": 2, "tipo": "hueco"},
+  {"x": 400, "y": 0, "tipo": "aceite"},
+  {"x": 350, "y": 1, "tipo": "roca"},
+  {"x": 250, "y": 2, "tipo": "cono"},
+  {"x": 410, "y": 0, "tipo": "hueco"},
+  {"x": 100, "y": 1, "tipo": "aceite"}
+]
