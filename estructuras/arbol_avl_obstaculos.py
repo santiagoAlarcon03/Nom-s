@@ -1,12 +1,9 @@
-from .nodo_avl import NodoAVL
 from collections import deque
 import pygame
 
 class ObstaculoNode:
-    """Representa un nodo del árbol AVL que contiene un obstáculo"""
     def __init__(self, obstaculo):
         self.obstaculo = obstaculo
-        # Usar coordenadas originales del JSON para comparación en AVL
         self.x = obstaculo.x_original if hasattr(obstaculo, 'x_original') and obstaculo.x_original is not None else obstaculo.x
         self.y = obstaculo.y_original if hasattr(obstaculo, 'y_original') and obstaculo.y_original is not None else obstaculo.y
         self.tipo = obstaculo.tipo
@@ -15,89 +12,68 @@ class ObstaculoNode:
         self.derecho = None
         
     def comparar_con(self, otro):
-        """Compara este nodo con otro según las reglas especificadas"""
-        # Primero comparar x
         if self.x < otro.x:
             return -1
         elif self.x > otro.x:
             return 1
+        elif self.y < otro.y:
+            return -1
+        elif self.y > otro.y:
+            return 1
         else:
-            # En caso de empate en x, comparar y
-            if self.y < otro.y:
-                return -1
-            elif self.y > otro.y:
-                return 1
-            else:
-                return 0  # Coordenadas idénticas (no permitidas)
+            return 0
     
     def obtener_factor_balance(self):
-        """Calcula el factor de balance del nodo"""
         altura_izq = self.izquierdo.altura if self.izquierdo else 0
         altura_der = self.derecho.altura if self.derecho else 0
         return altura_izq - altura_der
     
     def actualizar_altura(self):
-        """Actualiza la altura del nodo"""
         altura_izq = self.izquierdo.altura if self.izquierdo else 0
         altura_der = self.derecho.altura if self.derecho else 0
         self.altura = 1 + max(altura_izq, altura_der)
     
     def es_hoja(self):
-        """Verifica si el nodo es una hoja"""
         return self.izquierdo is None and self.derecho is None
     
     def tiene_un_hijo(self):
-        """Verifica si el nodo tiene exactamente un hijo"""
         return (self.izquierdo is None) != (self.derecho is None)
     
     def obtener_hijo_unico(self):
-        """Obtiene el único hijo del nodo"""
         return self.izquierdo if self.izquierdo else self.derecho
     
     def __str__(self):
         return f"({self.x},{self.y})-{self.tipo}"
 
 class ArbolAVLObstaculos:
-    """Árbol AVL específico para gestionar obstáculos del juego"""
-    
     def __init__(self):
         self.raiz = None
         self.tamaño = 0
         self.recorrido_actual = []
-        self.recorridos_guardados = {
-            'inorden': [],
-            'preorden': [],
-            'postorden': [],
-            'anchura': []
-        }
+        self.recorridos_guardados = {'inorden': [], 'preorden': [], 'postorden': [], 'anchura': []}
     
     def insertar_obstaculo(self, obstaculo):
-        """Inserta un obstáculo en el árbol AVL"""
         nuevo_nodo = ObstaculoNode(obstaculo)
         if self._coordenadas_existen(nuevo_nodo.x, nuevo_nodo.y):
             print(f"Advertencia: Coordenadas ({nuevo_nodo.x}, {nuevo_nodo.y}) ya existen. No se insertará.")
             return False
-        
         self.raiz = self._insertar_recursivo(self.raiz, nuevo_nodo)
         self.tamaño += 1
         self._actualizar_recorridos()
         return True
     
     def _coordenadas_existen(self, x, y):
-        """Verifica si las coordenadas ya existen en el árbol"""
         return self._buscar_coordenadas(self.raiz, x, y) is not None
     
     def _buscar_coordenadas(self, nodo, x, y):
-        """Busca un nodo con las coordenadas especificadas"""
         if nodo is None:
             return None
-        
         if x < nodo.x or (x == nodo.x and y < nodo.y):
             return self._buscar_coordenadas(nodo.izquierdo, x, y)
         elif x > nodo.x or (x == nodo.x and y > nodo.y):
             return self._buscar_coordenadas(nodo.derecho, x, y)
         else:
-            return nodo  # Coordenadas encontradas
+            return nodo
     
     def _insertar_recursivo(self, nodo, nuevo_nodo):
         """Inserción recursiva con balanceo AVL"""
@@ -201,7 +177,6 @@ class ArbolAVLObstaculos:
             self._preorden_recursivo(nodo.derecho, resultado)
     
     def recorrido_postorden(self):
-        """Recorrido en profundidad: Postorden (Izquierdo-Derecho-Raíz)"""
         resultado = []
         self._postorden_recursivo(self.raiz, resultado)
         return resultado
@@ -213,53 +188,37 @@ class ArbolAVLObstaculos:
             resultado.append(nodo)
     
     def recorrido_anchura(self):
-        """Recorrido en anchura (BFS - Breadth-First Search)"""
         if self.raiz is None:
             return []
-        
         resultado = []
         cola = deque([self.raiz])
-        
         while cola:
             nodo = cola.popleft()
             resultado.append(nodo)
-            
             if nodo.izquierdo:
                 cola.append(nodo.izquierdo)
             if nodo.derecho:
                 cola.append(nodo.derecho)
-        
         return resultado
     
     def obtener_recorrido(self, tipo):
-        """Obtiene un recorrido específico"""
         return self.recorridos_guardados.get(tipo, [])
     
     def obtener_obstaculos_ordenados(self):
-        """Obtiene todos los obstáculos en orden (inorden)"""
         return [nodo.obstaculo for nodo in self.recorrido_inorden()]
     
     def limpiar(self):
-        """Limpia el árbol"""
         self.raiz = None
         self.tamaño = 0
-        self.recorridos_guardados = {
-            'inorden': [],
-            'preorden': [],
-            'postorden': [],
-            'anchura': []
-        }
+        self.recorridos_guardados = {'inorden': [], 'preorden': [], 'postorden': [], 'anchura': []}
     
     def obtener_altura(self):
-        """Obtiene la altura del árbol"""
         return self.raiz.altura if self.raiz else 0
     
     def esta_vacio(self):
-        """Verifica si el árbol está vacío"""
         return self.raiz is None
     
     def obtener_tamaño(self):
-        """Obtiene el número de nodos en el árbol"""
         return self.tamaño
     
     def imprimir_estructura(self):
@@ -276,3 +235,132 @@ class ArbolAVLObstaculos:
                     self._imprimir_nodo(nodo.derecho, prefijo + ("    " if es_ultimo else "│   "), not nodo.izquierdo)
                 if nodo.izquierdo:
                     self._imprimir_nodo(nodo.izquierdo, prefijo + ("    " if es_ultimo else "│   "), True)
+    
+    def eliminar_nodo(self, x, y):
+        """Elimina un nodo del árbol AVL por coordenadas"""
+        if self.raiz is None:
+            return False
+        
+        # Crear nodo temporal para búsqueda
+        from game.obstaculo import Obstaculo
+        obstaculo_temp = Obstaculo(0, 0, "temp")
+        obstaculo_temp.x_original = x
+        obstaculo_temp.y_original = y
+        nodo_temp = ObstaculoNode(obstaculo_temp)
+        
+        self.raiz = self._eliminar_recursivo(self.raiz, nodo_temp)
+        
+        if self.raiz:
+            self._actualizar_recorridos()
+        
+        return True
+    
+    def _eliminar_recursivo(self, nodo, nodo_a_eliminar):
+        """Elimina un nodo recursivamente manteniendo el balance AVL"""
+        # Paso 1: Eliminación estándar de BST
+        if nodo is None:
+            return nodo
+        
+        comparacion = nodo_a_eliminar.comparar_con(nodo)
+        
+        if comparacion < 0:
+            nodo.izquierdo = self._eliminar_recursivo(nodo.izquierdo, nodo_a_eliminar)
+        elif comparacion > 0:
+            nodo.derecho = self._eliminar_recursivo(nodo.derecho, nodo_a_eliminar)
+        else:
+            # Nodo encontrado, eliminarlo
+            self.tamaño -= 1
+            
+            # Caso 1: Nodo con 0 o 1 hijo
+            if nodo.izquierdo is None:
+                return nodo.derecho
+            elif nodo.derecho is None:
+                return nodo.izquierdo
+            
+            # Caso 2: Nodo con 2 hijos
+            # Encontrar el sucesor inorden (nodo más pequeño en subárbol derecho)
+            sucesor = self._encontrar_minimo(nodo.derecho)
+            
+            # Copiar datos del sucesor al nodo actual
+            nodo.obstaculo = sucesor.obstaculo
+            nodo.x = sucesor.x
+            nodo.y = sucesor.y
+            nodo.tipo = sucesor.tipo
+            
+            # Eliminar el sucesor
+            nodo.derecho = self._eliminar_recursivo(nodo.derecho, sucesor)
+        
+        # Paso 2: Actualizar altura
+        nodo.actualizar_altura()
+        
+        # Paso 3: Obtener factor de balance
+        balance = nodo.obtener_factor_balance()
+        
+        # Paso 4: Rebalancear si es necesario
+        # Rotación derecha (caso Left-Left)
+        if balance > 1 and nodo.izquierdo.obtener_factor_balance() >= 0:
+            return self._rotar_derecha(nodo)
+        
+        # Rotación izquierda (caso Right-Right)
+        if balance < -1 and nodo.derecho.obtener_factor_balance() <= 0:
+            return self._rotar_izquierda(nodo)
+        
+        # Rotación izquierda-derecha (caso Left-Right)
+        if balance > 1 and nodo.izquierdo.obtener_factor_balance() < 0:
+            nodo.izquierdo = self._rotar_izquierda(nodo.izquierdo)
+            return self._rotar_derecha(nodo)
+        
+        # Rotación derecha-izquierda (caso Right-Left)
+        if balance < -1 and nodo.derecho.obtener_factor_balance() > 0:
+            nodo.derecho = self._rotar_derecha(nodo.derecho)
+            return self._rotar_izquierda(nodo)
+        
+        return nodo
+    
+    def _encontrar_minimo(self, nodo):
+        """Encuentra el nodo con valor mínimo en un subárbol"""
+        while nodo.izquierdo is not None:
+            nodo = nodo.izquierdo
+        return nodo
+    
+    def _rotar_derecha(self, y):
+        """Realiza una rotación derecha (Right Rotation)"""
+        x = y.izquierdo
+        T2 = x.derecho
+        
+        # Realizar rotación
+        x.derecho = y
+        y.izquierdo = T2
+        
+        # Actualizar alturas
+        altura_izq_y = y.izquierdo.altura if y.izquierdo else 0
+        altura_der_y = y.derecho.altura if y.derecho else 0
+        y.altura = 1 + max(altura_izq_y, altura_der_y)
+        
+        altura_izq_x = x.izquierdo.altura if x.izquierdo else 0
+        altura_der_x = x.derecho.altura if x.derecho else 0
+        x.altura = 1 + max(altura_izq_x, altura_der_x)
+        
+        # Retornar nueva raíz
+        return x
+    
+    def _rotar_izquierda(self, x):
+        """Realiza una rotación izquierda (Left Rotation)"""
+        y = x.derecho
+        T2 = y.izquierdo
+        
+        # Realizar rotación
+        y.izquierdo = x
+        x.derecho = T2
+        
+        # Actualizar alturas
+        altura_izq_x = x.izquierdo.altura if x.izquierdo else 0
+        altura_der_x = x.derecho.altura if x.derecho else 0
+        x.altura = 1 + max(altura_izq_x, altura_der_x)
+        
+        altura_izq_y = y.izquierdo.altura if y.izquierdo else 0
+        altura_der_y = y.derecho.altura if y.derecho else 0
+        y.altura = 1 + max(altura_izq_y, altura_der_y)
+        
+        # Retornar nueva raíz
+        return y

@@ -2,7 +2,6 @@ import pygame
 
 class Carrito:
     def __init__(self, x, y):
-        """Inicializa el carrito con posición inicial y sistema de energía"""
         self.x = x
         self.y = y
         self.velocidad = 60
@@ -11,71 +10,57 @@ class Carrito:
         self.color = (0, 0, 255)
         self.energia_maxima = 100
         self.energia_actual = 100
-        
-        # Sistema de salto
         self.saltando = False
         self.tiempo_salto = 0
-        self.duracion_salto = 800  # milisegundos
+        self.duracion_salto = 800
         
     def mover_arriba(self):
-        """Mueve el carrito hacia arriba (izquierda en coordenadas originales)"""
         self.x -= self.velocidad
         
     def mover_abajo(self):
-        """Mueve el carrito hacia abajo (derecha en coordenadas originales)"""
         self.x += self.velocidad
         
     def obtener_rect(self):
-        """Retorna el rectángulo de colisión del carrito"""
         return pygame.Rect(self.x, self.y, self.ancho, self.alto)
         
     def reducir_energia(self, cantidad):
-        """Reduce la energía del carrito"""
         self.energia_actual = max(0, self.energia_actual - cantidad)
-        return self.energia_actual <= 0  # Retorna True si se quedó sin energía
+        return self.energia_actual <= 0
         
     def obtener_porcentaje_energia(self):
-        """Retorna el porcentaje de energía actual"""
         return (self.energia_actual / self.energia_maxima) * 100
         
     def saltar(self):
-        """Inicia el salto del carrito"""
         if not self.saltando:
             self.saltando = True
             self.tiempo_salto = pygame.time.get_ticks()
             
     def actualizar_salto(self):
-        """Actualiza el estado del salto"""
         if self.saltando:
             tiempo_actual = pygame.time.get_ticks()
             if tiempo_actual - self.tiempo_salto >= self.duracion_salto:
                 self.saltando = False
                 
     def esta_saltando(self):
-        """Retorna True si el carrito está saltando"""
         return self.saltando
         
     def dibujar(self, pantalla, ancho, alto):
-        """Dibuja el carrito con forma de carro realista, adaptado al tamaño"""
         escala_x = ancho / 800
         escala_y = alto / 600
         x = int(self.x * escala_x)
         y = int(self.y * escala_y)
         w = int(self.ancho * escala_x)
         h = int(self.alto * escala_y)
-        
         self._dibujar_carro(pantalla, x, y, w, h)
         
     def _dibujar_carro(self, pantalla, x, y, w, h):
-        
-        # Cambiar colores si está saltando
         if self.saltando:
-            color_carroceria = (255, 215, 0)  # Dorado brillante
-            color_ventanas = (255, 255, 255)  # Blanco brillante
-            color_ruedas = (255, 165, 0)      # Naranja
-            color_llantas = (255, 140, 0)     # Naranja oscuro
-            color_parachoque = (255, 255, 255)  # Blanco
-            color_faros = (255, 255, 255)     # Blanco puro
+            color_carroceria = (255, 215, 0)
+            color_ventanas = (255, 255, 255)
+            color_ruedas = (255, 165, 0)
+            color_llantas = (255, 140, 0)
+            color_parachoque = (255, 255, 255)
+            color_faros = (255, 255, 255)
         else:
             color_carroceria = (220, 20, 20)
             color_ventanas = (135, 206, 235)

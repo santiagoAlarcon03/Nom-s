@@ -1,10 +1,7 @@
-# Clase Carretera
 import pygame
-import random
 
 class Carretera:
     def __init__(self, ancho, alto):
-        """Inicializa la carretera"""
         self.ancho = ancho
         self.alto = alto
         self.carriles = 3
@@ -13,53 +10,35 @@ class Carretera:
         self.velocidad_linea = 3
         
     def actualizar(self):
-        """Actualiza la posición de las líneas de la carretera"""
         self.linea_posicion += self.velocidad_linea
         if self.linea_posicion >= 40:
             self.linea_posicion = 0
             
     def dibujar(self, pantalla, ancho, alto):
-        """Dibuja la carretera con líneas divisorias animadas"""
         self.ancho = ancho
         self.alto = alto
         self.ancho_carril = ancho // self.carriles
-        
-        # Fondo de la carretera (gris oscuro)
         pantalla.fill((50, 50, 50))
-        
-        # Líneas divisorias verticales (entre carriles)
         for i in range(1, self.carriles):
             x = i * self.ancho_carril
-            # Dibujar líneas punteadas verticales
             for y in range(-20 + self.linea_posicion, alto + 20, 40):
                 pygame.draw.rect(pantalla, (255, 255, 255), (x - 2, y, 4, 20))
-        
-        # Bordes izquierdo y derecho de la carretera
-        pygame.draw.rect(pantalla, (255, 255, 255), (0, 0, 4, alto))  # Borde izquierdo
-        pygame.draw.rect(pantalla, (255, 255, 255), (ancho - 4, 0, 4, alto))  # Borde derecho
+        pygame.draw.rect(pantalla, (255, 255, 255), (0, 0, 4, alto))
+        pygame.draw.rect(pantalla, (255, 255, 255), (ancho - 4, 0, 4, alto))
 
     def dibujar_estatica(self, pantalla, ancho, alto):
-        """Dibuja la carretera estática sin animación"""
         self.ancho = ancho
         self.alto = alto
         self.ancho_carril = ancho // self.carriles
-        
-        # Fondo de la carretera (gris oscuro)
         pantalla.fill((50, 50, 50))
-        
-        # Líneas divisorias verticales estáticas (entre carriles)
         for i in range(1, self.carriles):
             x = i * self.ancho_carril
-            # Dibujar líneas punteadas verticales estáticas
             for y in range(0, alto, 40):
                 pygame.draw.rect(pantalla, (255, 255, 255), (x - 2, y, 4, 20))
-        
-        # Bordes izquierdo y derecho de la carretera
-        pygame.draw.rect(pantalla, (255, 255, 255), (0, 0, 4, alto))  # Borde izquierdo
-        pygame.draw.rect(pantalla, (255, 255, 255), (ancho - 4, 0, 4, alto))  # Borde derecho
+        pygame.draw.rect(pantalla, (255, 255, 255), (0, 0, 4, alto))
+        pygame.draw.rect(pantalla, (255, 255, 255), (ancho - 4, 0, 4, alto))
                 
     def obtener_carril_centro(self, numero_carril):
-        """Retorna la posición X del centro de un carril específico"""
         if 0 <= numero_carril < self.carriles:
             return numero_carril * self.ancho_carril + self.ancho_carril // 2
         return self.ancho // 2

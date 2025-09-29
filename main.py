@@ -4,14 +4,9 @@ from game.motor import Motor
 from game.gui import GUI
 
 def main():
-    """Función principal del juego"""
     pygame.init()
-    
-    # Crear instancias del motor y GUI
     motor = Motor()
     gui = GUI()
-    
-    # Bucle principal del juego
     clock = pygame.time.Clock()
     running = True
     
@@ -24,17 +19,11 @@ def main():
                     motor.reiniciar_juego()
                 elif event.key == pygame.K_ESCAPE:
                     running = False
-            
-            # Manejar eventos del juego
             motor.manejar_eventos(event)
         
-        # Actualizar lógica del juego
         motor.actualizar()
-        
-        # Renderizar
         gui.renderizar(motor)
-        
-        clock.tick(60)  # 60 FPS
+        clock.tick(60)
     
     pygame.quit()
     sys.exit()

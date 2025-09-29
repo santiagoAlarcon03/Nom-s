@@ -1,12 +1,5 @@
 [
   {"x": 100, "y": 0, "tipo": "roca"},
   {"x": 200, "y": 1, "tipo": "cono"},
-  {"x": 300, "y": 2, "tipo": "hueco"},
-  {"x": 400, "y": 0, "tipo": "aceite"},
-  {"x": 350, "y": 1, "tipo": "roca"},
-  {"x": 250, "y": 2, "tipo": "cono"},
-  {"x": 450, "y": 1, "tipo": "hueco"},
-  {"x": 150, "y": 2, "tipo": "aceite"},
-  {"x": 500, "y": 0, "tipo": "cono"},
-  {"x": 550, "y": 1, "tipo": "roca"}
+  {"x": 300, "y": 2, "tipo": "hueco"}
 ]
