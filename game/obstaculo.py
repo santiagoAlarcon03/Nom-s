@@ -3,8 +3,10 @@ import pygame
 class Obstaculo:
     def __init__(self, x, y, tipo="roca"):
         """Inicializa un obstáculo con tipo específico y daño de energía"""
-        self.x = x
-        self.y = y
+        self.x = x  # Posición en pantalla
+        self.y = y  # Posición en pantalla
+        self.x_original = None  # Coordenada X original del JSON (se asignará después)
+        self.y_original = None  # Coordenada Y original del JSON (carril)
         self.ancho = 40
         self.alto = 40
         self.tipo = tipo

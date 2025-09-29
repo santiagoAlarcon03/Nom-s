@@ -59,6 +59,11 @@ class GUI:
             self.mostrar_carril_actual(motor.carril_actual, motor.total_carriles)
             self.mostrar_energia(motor.carrito)
             self.mostrar_indicadores_carriles(motor)
+            self.mostrar_controles_arbol(motor)
+            
+            # Mostrar árbol AVL si está activado
+            if motor.mostrar_arbol:
+                self.mostrar_arbol_avl(motor)
         else:
             # Pantalla de game over
             self.mostrar_game_over(motor.puntuacion)
@@ -157,6 +162,45 @@ class GUI:
         # Instrucciones de control
         texto_controles = self.fuente_pequeña.render("↑/↓ o W/S: Cambiar carril", True, GRIS)
         self.pantalla.blit(texto_controles, (pos_x - 100, pos_y_base + 120))
+        
+    def mostrar_controles_arbol(self, motor):
+        """Muestra los controles para el árbol AVL"""
+        ancho, alto = self.get_size()
+        x_base = 10
+        y_base = alto - 120
+        
+        controles = [
+            "T: Mostrar/Ocultar Árbol AVL",
+            f"Recorrido actual: {motor.tipo_recorrido_actual.upper()}",
+            "1:InOrden 2:PreOrden 3:PostOrden 4:Anchura"
+        ]
+        
+        for i, control in enumerate(controles):
+            color = self.VERDE if i == 1 else self.AZUL
+            texto = self.fuente_pequeña.render(control, True, color)
+            self.pantalla.blit(texto, (x_base, y_base + i * 20))
+    
+    def mostrar_arbol_avl(self, motor):
+        """Muestra el árbol AVL en una ventana superpuesta"""
+        superficie_arbol = motor.obtener_superficie_arbol()
+        if superficie_arbol:
+            # Crear overlay semi-transparente
+            ancho, alto = self.get_size()
+            overlay = pygame.Surface((ancho, alto))
+            overlay.set_alpha(230) 
+            overlay.fill((0, 0, 0))
+            self.pantalla.blit(overlay, (0, 0))
+            
+            # Mostrar el árbol centrado
+            arbol_rect = superficie_arbol.get_rect()
+            arbol_rect.center = (ancho // 2, alto // 2)
+            self.pantalla.blit(superficie_arbol, arbol_rect)
+            
+            # Mostrar instrucciones para cerrar
+            instruccion = "Presiona T para ocultar el árbol AVL"
+            texto_instruccion = self.fuente_mediana.render(instruccion, True, self.BLANCO)
+            texto_rect = texto_instruccion.get_rect(center=(ancho // 2, alto - 30))
+            self.pantalla.blit(texto_instruccion, texto_rect)
         
     def mostrar_game_over(self, puntuacion_final):
         """Muestra la pantalla de game over"""

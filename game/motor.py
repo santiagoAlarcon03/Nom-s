@@ -6,7 +6,8 @@ import os
 from .carrito import Carrito
 from .carretera import Carretera
 from .obstaculo import Obstaculo
-from estructuras.arbol_avl import ArbolAVL
+from .visualizador_avl import VisualizadorArbolAVL
+from estructuras.arbol_avl_obstaculos import ArbolAVLObstaculos
 
 class Motor:
     def __init__(self):
@@ -23,7 +24,12 @@ class Motor:
         self.obstaculos = []
         self.obstaculos_predefinidos = []  # Obstáculos cargados desde JSON
         # Árbol AVL para gestionar obstáculos
-        self.arbol_obstaculos = ArbolAVL()
+        self.arbol_obstaculos = ArbolAVLObstaculos()
+        
+        # Visualizador del árbol AVL
+        self.visualizador_avl = VisualizadorArbolAVL()
+        self.mostrar_arbol = False
+        self.tipo_recorrido_actual = 'inorden'
         # Puntuación y estado del juego
         self.puntuacion = 0
         self.juego_activo = True
@@ -54,6 +60,23 @@ class Motor:
             elif evento.key == pygame.K_SPACE:
                 # Saltar con la barra espaciadora
                 self.carrito.saltar()
+            elif evento.key == pygame.K_t:
+                # Mostrar/ocultar árbol AVL
+                self.mostrar_arbol = not self.mostrar_arbol
+            elif evento.key == pygame.K_1:
+                self.tipo_recorrido_actual = 'inorden'
+            elif evento.key == pygame.K_2:
+                self.tipo_recorrido_actual = 'preorden'
+            elif evento.key == pygame.K_3:
+                self.tipo_recorrido_actual = 'postorden'
+            elif evento.key == pygame.K_4:
+                self.tipo_recorrido_actual = 'anchura'
+            elif evento.key == pygame.K_r and not self.juego_activo:
+                # Reiniciar juego
+                self.reiniciar_juego()
+            elif evento.key == pygame.K_ESCAPE:
+                # Salir del juego
+                return False
         elif evento.type == pygame.VIDEORESIZE:
             self.ancho_pantalla = evento.w
             self.alto_pantalla = evento.h
@@ -67,11 +90,14 @@ class Motor:
                 datos_obstaculos = json.load(archivo)
                 
             self.obstaculos_predefinidos = []
-            self.arbol_obstaculos = ArbolAVL()
+            self.arbol_obstaculos = ArbolAVLObstaculos()
             
             for obs_data in datos_obstaculos:
                 # Usar coordenadas exactas del JSON sin modificaciones
                 self.crear_obstaculo_en_posicion(obs_data["x"], obs_data["y"], obs_data["tipo"])
+            
+            # Imprimir recorridos después de cargar todos los obstáculos
+            self.imprimir_recorridos()
                 
         except FileNotFoundError:
             print("Archivo obstaculos.json no encontrado. No se cargarán obstáculos.")
@@ -91,13 +117,21 @@ class Motor:
         # La posición Y: convertir distancia a coordenadas de pantalla
         pos_y = (self.alto_pantalla - 50) - distancia
         
-        # Crear obstáculo
+        # Crear obstáculo con coordenadas originales del JSON
         obstaculo = Obstaculo(pos_x, pos_y, tipo)
+        # Agregar las coordenadas originales como propiedades adicionales
+        obstaculo.x_original = distancia  # Coordenada X original del JSON
+        obstaculo.y_original = carril     # Coordenada Y original del JSON (carril)
+        
         self.obstaculos_predefinidos.append(obstaculo)
         
-        # Agregar al árbol AVL
-        clave = f"{obstaculo.y},{obstaculo.x}"
-        self.arbol_obstaculos.insertar(clave, obstaculo)
+        # Insertar en el árbol AVL usando las coordenadas originales del JSON
+        if self.arbol_obstaculos.insertar_obstaculo(obstaculo):
+            print(f"Obstáculo insertado en AVL: ({distancia}, {carril}) - {tipo}")
+        else:
+            print(f"Error: Obstáculo duplicado en ({distancia}, {carril})")
+            # Remover de la lista si no se pudo insertar
+            self.obstaculos_predefinidos.remove(obstaculo)
         
     def actualizar(self):
         """Actualiza la lógica del juego"""
@@ -222,7 +256,7 @@ class Motor:
     def reiniciar_juego(self):
         """Reinicia el juego"""
         self.obstaculos.clear()
-        self.arbol_obstaculos = ArbolAVL()
+        self.arbol_obstaculos = ArbolAVLObstaculos()
         self.puntuacion = 0
         self.juego_activo = True
         self.velocidad_juego = 1.0
@@ -238,3 +272,43 @@ class Motor:
         self.cargar_obstaculos_json()
         for obstaculo in self.obstaculos_predefinidos:
             obstaculo.activo = True
+    
+    def obtener_superficie_arbol(self):
+        """Obtiene la superficie renderizada del árbol AVL"""
+        if self.mostrar_arbol and not self.arbol_obstaculos.esta_vacio():
+            return self.visualizador_avl.dibujar_arbol(
+                self.arbol_obstaculos, 
+                mostrar_recorrido=True, 
+                tipo_recorrido=self.tipo_recorrido_actual
+            )
+        return None
+    
+    def imprimir_recorridos(self):
+        """Imprime todos los recorridos del árbol en consola"""
+        print("\n" + "="*50)
+        print("RECORRIDOS DEL ÁRBOL AVL DE OBSTÁCULOS")
+        print("="*50)
+        
+        if self.arbol_obstaculos.esta_vacio():
+            print("El árbol está vacío")
+            return
+        
+        tipos_recorrido = {
+            'inorden': 'RECORRIDO EN ORDEN (Izq-Raíz-Der)',
+            'preorden': 'RECORRIDO PRE ORDEN (Raíz-Izq-Der)',
+            'postorden': 'RECORRIDO POST ORDEN (Izq-Der-Raíz)',
+            'anchura': 'RECORRIDO EN ANCHURA (BFS)'
+        }
+        
+        for tipo, nombre in tipos_recorrido.items():
+            print(f"\n{nombre}:")
+            recorrido = self.arbol_obstaculos.obtener_recorrido(tipo)
+            secuencia = []
+            for i, nodo in enumerate(recorrido, 1):
+                secuencia.append(f"{i}.({nodo.x},{nodo.y})-{nodo.tipo}")
+            print(" → ".join(secuencia))
+        
+        print(f"\nESTADÍSTICAS DEL ÁRBOL:")
+        print(f"- Nodos: {self.arbol_obstaculos.obtener_tamaño()}")
+        print(f"- Altura: {self.arbol_obstaculos.obtener_altura()}")
+        print("="*50 + "\n")
